@@ -2,9 +2,42 @@ import paho.mqtt.client as mqtt
 import time
 import json
 import copy
+import array
+from gpiozero import LED
+from time import sleep
+
+usleep = lambda x: print(x/1000000.0)
+    
 
 def parseIR(payload):
-    print(payload)
+    float_array = []
+    data = payload.replace('{','').replace('}','').replace(' ','')
+    print(data)
+    for x in range(0, len(data), 4):
+        print(data[x:x+4] + " = " + str(int(data[x:x+4], 16)))
+        float_array.append(int(data[x:x+4], 16)/1000000.0)
+
+    print("int_array: " + str(float_array))
+    gpioControl(float_array)
+
+# num_array - num in seconds
+def gpioControl(num_array):
+    led = LED(21) # gpio 21
+
+    for i in range(0, len(num_array)):
+        if i%2:
+            # spase
+            #print("spase")
+            led.off()
+            time.sleep(num_array[i])
+        else:
+            # mark
+            #print("mark")
+            led.on() 
+            time.sleep(num_array[i])
+            led.off()
+        
+
 
 
 class MQTT():
