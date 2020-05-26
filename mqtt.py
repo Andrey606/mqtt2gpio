@@ -1,9 +1,10 @@
 import paho.mqtt.client as mqtt
 import time
-#import simplejson as json
+import json
 import copy
 
-
+def parseIR(payload):
+    print(payload)
 
 
 class MQTT():
@@ -48,9 +49,18 @@ class MQTT():
         self.client.loop_stop()
 
     def on_message(self, client, userdata, message):
-        print(str(message.payload.decode("utf-8")))
+        answer = str(message.payload.decode("utf-8"))
+        print(answer)
 
-        
+        # ищем нужный кластер и парсим его
+        if 'commands' in json.loads(answer): 
+            for item in json.loads(answer)['commands']:
+                if 'command' in item: 
+                    #print(item['command'][0:3])
+                    #print(item['command'][4:10])
+                    if item['command'][0:3] == "raw" and item['command'][4:10] == "0x1234":
+                        parseIR(item['command'][10:])
+
 
         self.status = True
 

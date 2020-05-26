@@ -5,7 +5,7 @@ from mqtt import *
 led = LED(21) # gpio 21
 
 # mqtt
-client = MQTT("192.168.0.104", 1883, "omo-sl-embed-ua-kiev-andrey", "omo", "hubEvents/omo-sl-embed-ua-kiev-andrey", "hubCommands/omo-sl-embed-ua-kiev-andrey")
+client = MQTT("192.168.0.104", 1883, "omo-sl-embed-ua-kiev-andrey", "omo", "hubEvents/omo-sl-embed-ua-kiev-andrey", "gw/7777777777777777/commands")
 client.create_connection() 
 #client.send("test", 30) # in seconds
 
