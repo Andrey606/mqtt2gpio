@@ -7,6 +7,7 @@ from gpiozero import LED
 from time import sleep
 
 usleep = lambda x: print(x/1000000.0)
+OFFSET_US = 0.000100
     
 
 def parseIR(payload):
@@ -15,7 +16,7 @@ def parseIR(payload):
     print(data)
     for x in range(0, len(data), 4):
         print(data[x:x+4] + " = " + str(int(data[x:x+4], 16)))
-        float_array.append(int(data[x:x+4], 16)/1000000.0)
+        float_array.append((int(data[x:x+4], 16)/1000000.0)-OFFSET_US)
 
     print("int_array: " + str(float_array))
     gpioControl(float_array)
