@@ -1,20 +1,13 @@
-from gpiozero import LED
-from time import sleep
 from mqtt import *
+import time
 
-# mqtt "192.168.0.104"
 client = MQTT("localhost", 1883, "omo-sl-embed-ua-kiev-andrey", "omo", "hubEvents/omo-sl-embed-ua-kiev-andrey", "gw/7777777777777777/commands")
 client.create_connection() 
 
-#led = LED(21) # gpio 21
-
-while True:
-    #led.on()
-    #sleep(0.000500-0.000100)
-    #led.off()
-    #sleep(0.000500-0.000100)
+while 1:
+    #print(time.time_ns())
+    #print(time.time())
     pass
+  
+#функция time.time() возвращает время в секундах начиная с какой-то там даты
 
-#0.000261 261 мкс
-#0.000001 1 мкс - 0.089 мс
-#0.0000001      - 

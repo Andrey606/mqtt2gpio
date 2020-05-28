@@ -1,53 +1,51 @@
 import paho.mqtt.client as mqtt
 import time
 import json
-import copy
 import array
 from gpiozero import LED
-from time import sleep
 
-usleep = lambda x: print(x/1000000.0)
-OFFSET_US = 0.000100 # 100 microseconds
-ALLIGN = 8
-    
+led = LED(21) # gpio 21
 
 def parseIR(payload):
     float_array = []
     data = payload.replace('{','').replace('}','').replace(' ','')
-    print(data)
+    summ = 0
+
     for x in range(0, len(data), 4):
         print(data[x:x+4] + " = " + str(int(data[x:x+4], 16)))
-        float_num = (int(data[x:x+4], 16)/1000000.0)
-        if float_num <= OFFSET_US:
-            float_array.append(round(float_num, ALLIGN))
-        else:
-            float_array.append(round(float_num-OFFSET_US, ALLIGN))
+        float_num = (int(data[x:x+4], 16)*1000.0)
+        float_array.append(float_num)
+        summ = summ + float_num
+    
+    print("\nfloat_array: " + str(float_array))
+    print("-------------------------------------------")
+    print("summ: " + str(round(summ/1000000000, 4)) + " sec")
 
-    print("int_array: " + str(float_array))
+    t = time.time()
     gpioControl(float_array)
+    print("spent_time: " + str(round(time.time() - t, 4)) + " sec")
 
+# 0.0006
+# 0.5 sec time
+# 0.5 sec time_ns
 # num_array - num in seconds
 def gpioControl(num_array):
-    led = LED(21) # gpio 21
-
+    t = time.time_ns()
+    summ = 0
     for i in range(0, len(num_array)):
+        summ = summ + num_array[i]
         if i%2:
-            # spase
-            #print("spase")
+            #"space"
             led.off()
-            time.sleep(num_array[i])
+            while (time.time_ns()-t) <= summ: pass  
         else:
-            # mark
-            #print("mark")
-            led.on() 
-            time.sleep(num_array[i])
+            #"mark"
+            led.on()
+            while (time.time_ns()-t) <= summ: pass   
             led.off()
-        
-
-
 
 class MQTT():
-    client = mqtt.Client("qweqwrqwdsufcjdsfuihdsfu")
+    client = mqtt.Client("qweqwrdsqsdwdssdsufcjdsfuihdsfu")
 
     def __init__(self, ip, port, username, password, topicTX, topicRX):
         self.received_message = []
@@ -90,7 +88,6 @@ class MQTT():
     def on_message(self, client, userdata, message):
         answer = str(message.payload.decode("utf-8"))
         print(answer)
-
         # ищем нужный кластер и парсим его
         if 'commands' in json.loads(answer): 
             for item in json.loads(answer)['commands']:
@@ -99,7 +96,6 @@ class MQTT():
                     #print(item['command'][4:10])
                     if item['command'][0:3] == "raw" and item['command'][4:10] == "0x1234":
                         parseIR(item['command'][10:])
-
-
+                        break
         self.status = True
 
