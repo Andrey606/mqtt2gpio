@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <time.h>
 
 #include <errno.h>
 #include <bcm2835.h>
@@ -15,7 +16,7 @@
 #define PORT     1883
 #define RX_TOPIC "gw/7777777777777777/commands"
 
-#define PIN RPI_GPIO_P1_26
+#define PIN RPI_V2_GPIO_P1_40
 
 struct mosquitto *mosq = NULL;
 const char *const cluster = "0x1234";
@@ -29,21 +30,27 @@ void squeeze (char s[], int c) {
 	s[j] = '\0';
 }
 
-void gpio_control(int *num_array)
+void gpio_control(int *num_array, int size)
 {
-    int i;
-
-    if (!bcm2835_init())
-            exit(EXIT_FAILURE);
-
-    bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_OUTP);
-
-    while(1)
+    //clock_t start = clock ();
+    for(int i=0; i<size; i++)
     {
-        bcm2835_gpio_write(PIN, HIGH);
-        bcm2835_gpio_write(PIN, LOW);
+        if(i%2)
+        {
+            // space
+            bcm2835_gpio_write(PIN, LOW);
+            bcm2835_delayMicroseconds(num_array[i]);
+            //printf("space: %d\n", num_array[i]);
+        }
+        else
+        {
+            // mark
+            bcm2835_gpio_write(PIN, HIGH);
+            bcm2835_delayMicroseconds(num_array[i]);
+            bcm2835_gpio_write(PIN, LOW);
+            //printf("mark: %d\n", num_array[i]);
+        }
     }
-    bcm2835_close();
 }
 
 void parseIncomingStringData(char *incomingStr)
@@ -78,7 +85,7 @@ void parseIncomingStringData(char *incomingStr)
             num_array[k] = (int)strtol(str_hex, NULL, 16);
         }
 
-        gpio_control(num_array);
+        gpio_control(num_array, size_array);
         
         break;
     }
@@ -144,10 +151,24 @@ void mqtt_setup(char *host, int port)
 
 int main(int argc, char *argv[])
 {
-  mqtt_setup(HOST, PORT);  
-  
-  while(true)
-  {
+    mqtt_setup(HOST, PORT);  
+
+    if (!bcm2835_init())
+        exit(EXIT_FAILURE);
+
+    bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_OUTP);
+    bcm2835_gpio_write(PIN, LOW);
     
-  }
+    while(true)
+    {
+        clock_t start, stop;
+        unsigned long t;
+        start = clock ();
+        for (t=0; t<500000L; t++);
+        stop = clock();
+        printf("Loop required %f seconds\n", (stop - start) / CLOCK_TAI);
+    }
+
+    bcm2835_close();
+    return 0;
 }
