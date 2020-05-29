@@ -4,6 +4,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include <errno.h>
+#include <bcm2835.h>
+
 #include "cJSON.h"
 
 #define USERNAME "omo-sl-embed-ua-kiev-andrey"
@@ -11,6 +14,8 @@
 #define HOST     "localhost"
 #define PORT     1883
 #define RX_TOPIC "gw/7777777777777777/commands"
+
+#define PIN RPI_GPIO_P1_26
 
 struct mosquitto *mosq = NULL;
 const char *const cluster = "0x1234";
@@ -26,7 +31,19 @@ void squeeze (char s[], int c) {
 
 void gpio_control(int *num_array)
 {
+    int i;
 
+    if (!bcm2835_init())
+            exit(EXIT_FAILURE);
+
+    bcm2835_gpio_fsel(PIN, BCM2835_GPIO_FSEL_OUTP);
+
+    while(1)
+    {
+        bcm2835_gpio_write(PIN, HIGH);
+        bcm2835_gpio_write(PIN, LOW);
+    }
+    bcm2835_close();
 }
 
 void parseIncomingStringData(char *incomingStr)

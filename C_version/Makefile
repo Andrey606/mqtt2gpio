@@ -1,4 +1,4 @@
-LDLIBS += -lmosquitto -lm
+LDLIBS += -lmosquitto -lm -l bcm2835
 
 TARGET = main
 
