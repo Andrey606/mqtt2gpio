@@ -3,45 +3,61 @@ import time
 import json
 import array
 from gpiozero import LED
+from threading import Thread
 
 led = LED(21) # gpio 21
+led.off()
+
+data_array = []
 
 def parseIR(payload):
-    float_array = []
+    global data_array
+    data_array.clear()
     data = payload.replace('{','').replace('}','').replace(' ','')
     summ = 0
 
     for x in range(0, len(data), 4):
         print(data[x:x+4] + " = " + str(int(data[x:x+4], 16)))
-        float_num = (int(data[x:x+4], 16)*1000.0)
-        float_array.append(float_num)
+        float_num = (int(data[x:x+4], 16)*1000)
+        data_array.append(float_num)
         summ = summ + float_num
     
-    print("\nfloat_array: " + str(float_array))
+    print("data_array: " + str(data_array))
     print("-------------------------------------------")
     print("summ: " + str(round(summ/1000000000, 4)) + " sec")
 
+    #while True:
+    led.off()
     t = time.time()
-    gpioControl(float_array)
+
+    thread1 = Thread(target=gpioControl)
+    thread1.start()
+    thread1.join()
+
     print("spent_time: " + str(round(time.time() - t, 4)) + " sec")
+    led.off()
 
 # 0.0006
 # 0.5 sec time
 # 0.5 sec time_ns
-# num_array - num in seconds
-def gpioControl(num_array):
-    t = time.time_ns()
+# data_array - num in seconds
+def gpioControl():
+    global data_array
+    # thread_time_ns
+    t = time.thread_time_ns()
     summ = 0
-    for i in range(0, len(num_array)):
-        summ = summ + num_array[i]
+    for i in range(0, len(data_array)):
+        summ = summ + data_array[i]
         if i%2:
             #"space"
+            #print("space: " + str(data_array[i]/1000))
             led.off()
-            while (time.time_ns()-t) <= summ: pass  
+            while (time.thread_time_ns()-t) <= summ: pass  
         else:
             #"mark"
+            #print("mark: " + str(data_array[i]/1000))
             led.on()
-            while (time.time_ns()-t) <= summ: pass   
+            while (time.thread_time_ns()-t) <= summ: pass   
             led.off()
 
 class MQTT():
