@@ -53,6 +53,33 @@ void gpio_control(int *num_array, int size)
     }
 }
 
+void gpio_control_timer(int *num_array, int size)
+{
+    int offset_us = CLOCKS_PER_SEC/1000000;
+    int summ = 0;
+    int start = clock()/offset_us;
+    for(int i=0; i<size; i++)
+    {
+        summ += num_array[i];
+
+        if(i%2)
+        {
+            // space
+            bcm2835_gpio_write(PIN, LOW);
+            while ((clock()/offset_us)-start < summ){}
+            //printf("space: %d\n", num_array[i]);
+        }
+        else
+        {
+            // mark
+            bcm2835_gpio_write(PIN, HIGH);
+            while ((clock()/offset_us)-start < summ){}
+            bcm2835_gpio_write(PIN, LOW);
+            //printf("mark: %d\n", num_array[i]);
+        }
+    }
+}
+
 void parseIncomingStringData(char *incomingStr)
 {
     int *num_array = NULL;
@@ -86,6 +113,7 @@ void parseIncomingStringData(char *incomingStr)
         }
 
         gpio_control(num_array, size_array);
+        //gpio_control_timer(num_array, size_array);
         
         break;
     }
@@ -161,7 +189,7 @@ int main(int argc, char *argv[])
     
     while(true)
     {
-        
+
     }
 
     bcm2835_close();
