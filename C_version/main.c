@@ -4,6 +4,8 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "cJSON.h"
+
 #define USERNAME "omo-sl-embed-ua-kiev-andrey"
 #define PASSWORD "omo"
 #define HOST     "localhost"
@@ -11,13 +13,87 @@
 #define RX_TOPIC "gw/7777777777777777/commands"
 
 struct mosquitto *mosq = NULL;
+const char *const cluster = "0x1234";
+
+void squeeze (char s[], int c) {
+	int i, j;
+ 
+	for (i = j = 0; s[i] != '\0'; i++)
+		if (s[i] != c)
+			s[j++] = s[i];
+	s[j] = '\0';
+}
+
+void gpio_control(int *num_array)
+{
+
+}
+
+void parseIncomingStringData(char *incomingStr)
+{
+    int *num_array = NULL;
+    int size_array = 0;
+
+    while (strstr(incomingStr, cluster) != NULL) {
+        //printf("Found!\n");
+
+        // delete first 11 symbols
+        for(int j=0; j<11; j++)
+        {
+            int sz = strlen(incomingStr);
+            memmove(incomingStr, incomingStr + 1, sz - 1);
+            incomingStr[sz - 1] = 0;
+        }
+
+        // delete '{' and '}' and ' '
+        squeeze(incomingStr, ' ');
+        squeeze(incomingStr, '{');
+        squeeze(incomingStr, '}');
+
+        // str to num
+        size_array = strlen(incomingStr)/4;
+        num_array = (int*)malloc(size_array * sizeof(int));
+        int a=0,b=1,c=2,d=3;
+        for(int k=0; k<size_array; k++)
+        {
+            char str_hex[5] = {incomingStr[a],incomingStr[b], incomingStr[c],incomingStr[d], '\0'};
+            a+=4;b+=4;c+=4;d+=4;
+            num_array[k] = (int)strtol(str_hex, NULL, 16);
+        }
+
+        gpio_control(num_array);
+        
+        break;
+    }
+    //printf("str: %s\n", incomingStr);
+
+    if(num_array != NULL)
+        free(num_array);
+}
+
+void parseIncomingJsonData(char *incomingJson)
+{
+    cJSON *root = cJSON_Parse(incomingJson);
+    cJSON *commands = NULL;
+
+    // Handling authorization data
+    if((commands = cJSON_GetObjectItem(root, "commands")) != NULL)
+    {
+        for (int i=0; i<cJSON_GetArraySize(commands);i++)
+        {
+            parseIncomingStringData(cJSON_GetObjectItem(cJSON_GetArrayItem(commands,i), "command")->valuestring);
+        }
+        
+        free(commands);
+    }
+
+    free(root);
+}
 
 void mosquitto_message_handler(struct mosquitto *mosq, void *obj, const struct mosquitto_message *message)
 {
-    printf("------------------callback------------------\n");
-    printf("topic: %s\n", message->topic);
-    printf("message: %s\n", (char *)message->payload);
-    printf("--------------------------------------------\n");
+    //printf("\nmessage: %s\n", (char *)message->payload);
+    parseIncomingJsonData((char *)message->payload);
 }
 
 void mqtt_setup(char *host, int port)
@@ -53,7 +129,7 @@ int main(int argc, char *argv[])
 {
   mqtt_setup(HOST, PORT);  
   
-  while(1)
+  while(true)
   {
     
   }
