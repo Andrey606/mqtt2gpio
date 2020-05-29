@@ -161,12 +161,7 @@ int main(int argc, char *argv[])
     
     while(true)
     {
-        clock_t start, stop;
-        unsigned long t;
-        start = clock ();
-        for (t=0; t<500000L; t++);
-        stop = clock();
-        printf("Loop required %f seconds\n", (stop - start) / CLOCK_TAI);
+        
     }
 
     bcm2835_close();
